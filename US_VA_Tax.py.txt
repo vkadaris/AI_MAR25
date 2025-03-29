@@ -1,0 +1,66 @@
+import pandas as pd
+
+# --- Functions ---
+
+def calculate_federal_tax(taxable_income):
+    """Calculates federal income tax based on 2024 brackets."""
+    if taxable_income <= 22000:
+        return 0.10 * taxable_income
+    elif taxable_income <= 89450:
+        return 0.12 * (taxable_income - 22000) + 2200
+    elif taxable_income <= 190750:
+        return 0.22 * (taxable_income - 89450) + 9510
+    elif taxable_income <= 578125:
+        return 0.24 * (taxable_income - 190750) + 29510
+    elif taxable_income <= 693750:
+        return 0.32 * (taxable_income - 578125) + 111810
+    elif taxable_income <= 861500:
+        return 0.35 * (taxable_income - 693750) + 146110
+    else:
+        return 0.37 * (taxable_income - 861500) + 196110
+
+def calculate_virginia_tax(taxable_income):
+    """Calculates Virginia state income tax based on 2024 brackets."""
+    if taxable_income <= 3000:
+        return 0.02 * taxable_income
+    elif taxable_income <= 5000:
+        return 0.03 * (taxable_income - 3000) + 60
+    elif taxable_income <= 17000:
+        return 0.05 * (taxable_income - 5000) + 60
+    else:
+        return 0.0575 * (taxable_income - 17000) + 710
+
+# --- Constants ---
+
+BASE_INCOME = 50000
+INCOME_INCREMENT = 10000
+MAX_401K_CONTRIBUTION = 22500  # 2024 limit
+MAX_INCOME = 800000
+
+# --- Calculations ---
+
+data = []
+for income in range(BASE_INCOME, MAX_INCOME + 1, INCOME_INCREMENT):
+    taxable_income = income - MAX_401K_CONTRIBUTION - 27700  # Standard deduction for married filing jointly
+    if taxable_income < 0:
+        taxable_income = 0
+
+    federal_tax = calculate_federal_tax(taxable_income)
+    virginia_tax = calculate_virginia_tax(taxable_income)
+    total_tax = federal_tax + virginia_tax
+    effective_rate = (total_tax / income) * 100 if income > 0 else 0
+    marginal_rate = ((calculate_federal_tax(taxable_income + INCOME_INCREMENT) - federal_tax) / INCOME_INCREMENT) * 100 if taxable_income > 0 else 0
+
+    data.append([
+        f"${income:,}",
+        f"${taxable_income:,}",
+        f"${federal_tax:,.0f}",
+        f"${virginia_tax:,.0f}",
+        f"${total_tax:,.0f}",
+        f"${MAX_401K_CONTRIBUTION:,}",
+        f"{effective_rate:.1f}%",
+        f"{marginal_rate:.1f}%"
+    ])
+
+df = pd.DataFrame(data, columns=['Income', 'TaxOn', 'US_Tax', 'VA_Tax', 'Total_Tax', '401K', 'Eff Rate', 'Marg Rate'])
+print(df.to_string(index=False))
